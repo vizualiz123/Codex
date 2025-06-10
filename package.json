@@ -1,0 +1,8 @@
+{
+  "name": "tap-game",
+  "version": "1.0.0",
+  "description": "Simple tap game for the browser",
+  "scripts": {
+    "test": "node test.js"
+  }
+}
