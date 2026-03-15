@@ -1,3 +1,16 @@
-# Tap Game
+# QR Code Generator
 
-This repository contains a simple tapping game for the browser. Open `index.html` in your browser and press **Start** to begin. Tap the **Tap!** button as many times as you can within 10 seconds.
+Простое веб-приложение для генерации QR-кодов.
+
+## Возможности
+
+- Генерация QR-кода из текста, ссылки или любых данных.
+- Предпросмотр QR-кода прямо на странице.
+- Скачивание QR-кода в формате PNG.
+
+## Запуск
+
+1. Откройте файл `index.html` в браузере.
+2. Введите данные в поле.
+3. Нажмите **«Сгенерировать QR-код»**.
+4. При необходимости нажмите **«Скачать PNG»**.
