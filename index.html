@@ -1,69 +1,191 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tap Game</title>
+    <title>Генератор QR-кодов</title>
     <style>
+        :root {
+            color-scheme: light;
+        }
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
             margin: 0;
-            padding: 2em;
-            background-color: #f0f0f0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #f4f7ff, #e9f9f1);
+            color: #1f2937;
         }
-        #tapButton {
-            padding: 1em 2em;
-            font-size: 1.5em;
+        .card {
+            width: min(92vw, 460px);
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 18px 45px rgba(31, 41, 55, 0.15);
+            padding: 1.5rem;
+            box-sizing: border-box;
+        }
+        h1 {
+            margin: 0 0 0.75rem;
+            font-size: 1.6rem;
+        }
+        p {
+            margin: 0 0 1rem;
+            color: #4b5563;
+            font-size: 0.95rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        textarea {
+            width: 100%;
+            min-height: 92px;
+            box-sizing: border-box;
+            border-radius: 10px;
+            border: 1px solid #d1d5db;
+            padding: 0.75rem;
+            font-size: 0.95rem;
+            resize: vertical;
+            margin-bottom: 0.9rem;
+        }
+        .actions {
+            display: flex;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        button, a.button {
+            appearance: none;
+            border: 0;
+            border-radius: 10px;
+            padding: 0.7rem 1rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.08s ease, opacity 0.2s ease;
+        }
+        button:active, a.button:active {
+            transform: scale(0.98);
+        }
+        #generateBtn {
+            background: #2563eb;
+            color: #fff;
+        }
+        #downloadBtn {
+            background: #10b981;
+            color: #fff;
+            opacity: 0.45;
+            pointer-events: none;
+        }
+        #downloadBtn.ready {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #status {
+            min-height: 1.3rem;
+            margin: 0;
+            font-size: 0.9rem;
+            color: #b91c1c;
+        }
+        #status.ok {
+            color: #047857;
+        }
+        .preview {
+            border: 1px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 1rem;
+            display: grid;
+            place-items: center;
+            min-height: 260px;
+            background: #f9fafb;
+        }
+        #qrImage {
+            width: min(100%, 250px);
+            aspect-ratio: 1 / 1;
+            object-fit: contain;
             display: none;
+            background: #fff;
+            border-radius: 8px;
         }
-        #startButton {
-            padding: 1em 2em;
-            font-size: 1.5em;
-        }
-        #score, #timer {
-            font-size: 1.25em;
-            margin: 1em 0;
+        .placeholder {
+            color: #6b7280;
+            font-size: 0.95rem;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <h1>Tap Game</h1>
-    <div id="timer">Time: 10</div>
-    <div id="score">Score: 0</div>
-    <button id="startButton">Start</button>
-    <button id="tapButton">Tap!</button>
+    <main class="card">
+        <h1>Генератор QR-кодов</h1>
+        <p>Введите ссылку, текст или любые данные — и получите QR-код за секунду.</p>
+
+        <label for="dataInput">Содержимое QR-кода</label>
+        <textarea id="dataInput" placeholder="Например: https://example.com"></textarea>
+
+        <div class="actions">
+            <button id="generateBtn" type="button">Сгенерировать QR-код</button>
+            <a id="downloadBtn" class="button" download="qrcode.png">Скачать PNG</a>
+        </div>
+
+        <p id="status" role="status" aria-live="polite"></p>
+
+        <div class="preview">
+            <img id="qrImage" alt="Сгенерированный QR-код">
+            <div id="placeholder" class="placeholder">QR-код появится здесь</div>
+        </div>
+    </main>
 
     <script>
-        const startButton = document.getElementById('startButton');
-        const tapButton = document.getElementById('tapButton');
-        const scoreDisplay = document.getElementById('score');
-        const timerDisplay = document.getElementById('timer');
-        let score = 0;
-        let time = 10;
-        let countdown;
+        const input = document.getElementById('dataInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const status = document.getElementById('status');
+        const qrImage = document.getElementById('qrImage');
+        const placeholder = document.getElementById('placeholder');
 
-        startButton.addEventListener('click', () => {
-            score = 0;
-            time = 10;
-            scoreDisplay.textContent = `Score: ${score}`;
-            timerDisplay.textContent = `Time: ${time}`;
-            startButton.style.display = 'none';
-            tapButton.style.display = 'inline-block';
-            countdown = setInterval(() => {
-                time--;
-                timerDisplay.textContent = `Time: ${time}`;
-                if (time <= 0) {
-                    clearInterval(countdown);
-                    tapButton.style.display = 'none';
-                    startButton.style.display = 'inline-block';
-                }
-            }, 1000);
+        const buildQrUrl = (value) => {
+            const encoded = encodeURIComponent(value);
+            return `https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=${encoded}`;
+        };
+
+        const showMessage = (text, success = false) => {
+            status.textContent = text;
+            status.classList.toggle('ok', success);
+        };
+
+        const resetPreview = () => {
+            qrImage.style.display = 'none';
+            qrImage.removeAttribute('src');
+            placeholder.style.display = 'block';
+            downloadBtn.classList.remove('ready');
+            downloadBtn.removeAttribute('href');
+        };
+
+        generateBtn.addEventListener('click', () => {
+            const value = input.value.trim();
+            if (!value) {
+                resetPreview();
+                showMessage('Введите текст или ссылку, чтобы создать QR-код.');
+                return;
+            }
+
+            const qrUrl = buildQrUrl(value);
+            qrImage.src = qrUrl;
+            qrImage.style.display = 'block';
+            placeholder.style.display = 'none';
+            downloadBtn.href = qrUrl;
+            downloadBtn.classList.add('ready');
+            showMessage('QR-код готов. Вы можете скачать его в PNG.', true);
         });
 
-        tapButton.addEventListener('click', () => {
-            score++;
-            scoreDisplay.textContent = `Score: ${score}`;
+        input.addEventListener('input', () => {
+            if (!input.value.trim()) {
+                resetPreview();
+                showMessage('');
+            }
         });
     </script>
 </body>
